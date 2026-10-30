@@ -120,7 +120,7 @@ git commit -S -m "Initialize staging vault data"
 Add the new private GitHub repository as the local repository origin:
 
 ```bash
-git remote add origin git@github.com:dean1012/grayhaven-vault.git
+git remote add origin git@github.com:grayhavensystemsllc/grayhaven-vault.git
 ```
 
 [Back to top](#setup)
