@@ -27,13 +27,13 @@ request features when GitHub exposes a control for them.
 ## Create the Local grayhaven-vault Repository on Your Workstation
 
 Use
-[`grayhaven-vault-example`](https://github.com/dean1012/grayhaven-vault-example)
+[`grayhaven-vault-example`](https://github.com/grayhavensystemsllc/grayhaven-vault-example)
 as the documented starting shape for `grayhaven-vault`.
 
 Example setup flow:
 
 ```bash
-git clone git@github.com:dean1012/grayhaven-vault-example.git grayhaven-vault
+git clone git@github.com:grayhavensystemsllc/grayhaven-vault-example.git grayhaven-vault
 cd grayhaven-vault
 ```
 
