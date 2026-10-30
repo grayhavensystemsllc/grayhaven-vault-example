@@ -46,7 +46,7 @@ but the required refs must be fetched locally.
 
 ## Automation Consumers
 
-[`grayhaven-infra-opentofu`](https://github.com/dean1012/grayhaven-infra-opentofu)
+[`grayhaven-infra-opentofu`](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu)
 reads `config.yml` and `firewall.yml` from the workspace-selected Git ref in a
 local checkout during OpenTofu plan and apply.
 
