@@ -25,7 +25,7 @@ encryption.
 `grayhaven-vault` separates private operational data from public automation
 code while preserving a documented interface between these repositories:
 
-- [`grayhaven-infra-opentofu`](https://github.com/dean1012/grayhaven-infra-opentofu)
+- [`grayhaven-infra-opentofu`](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu)
 - [`grayhaven-config-ansible`](https://github.com/dean1012/grayhaven-config-ansible)
 
 This repository is not a general-purpose deployment template. Deploying similar

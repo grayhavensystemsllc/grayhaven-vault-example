@@ -65,9 +65,9 @@ git config core.hooksPath .githooks
 
 Edit `config.yml`, `firewall.yml`, and the files under `vault/` for production
 using the production values generated during the
-[setup process](https://github.com/dean1012/grayhaven-infra-opentofu/blob/main/docs/setup.md)
+[setup process](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu/blob/main/docs/setup.md)
 in the
-[`grayhaven-infra-opentofu`](https://github.com/dean1012/grayhaven-infra-opentofu)
+[`grayhaven-infra-opentofu`](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu)
 repository where applicable.
 
 File formats are documented in [File Schema](schema.md).
