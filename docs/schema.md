@@ -631,9 +631,9 @@ belong in encrypted vault files in `grayhaven-vault`.
 ### Hosted Domain DNS Coordination
 
 When adding a hosted domain, also add matching
-[environment DNS policy](https://github.com/dean1012/grayhaven-infra-opentofu/blob/main/docs/policy.md#environment-dns-policy)
+[environment DNS policy](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu/blob/main/docs/policy.md#environment-dns-policy)
 in the
-[grayhaven-infra-opentofu](https://github.com/dean1012/grayhaven-infra-opentofu)
+[grayhaven-infra-opentofu](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu)
 repository.
 
 For hosted web domains, set both `environment.apex: true` and
