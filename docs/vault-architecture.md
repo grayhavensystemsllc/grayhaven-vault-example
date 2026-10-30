@@ -50,7 +50,7 @@ but the required refs must be fetched locally.
 reads `config.yml` and `firewall.yml` from the workspace-selected Git ref in a
 local checkout during OpenTofu plan and apply.
 
-[`grayhaven-config-ansible`](https://github.com/dean1012/grayhaven-config-ansible)
+[`grayhaven-config-ansible`](https://github.com/grayhavensystemsllc/grayhaven-config-ansible)
 uses the `grayhaven-vault-ref` cloud tag to check out the same environment ref
 on the active control bastion during convergence and reads the matching
 `config.yml`, `firewall.yml`, and `vault/*.yml` files.

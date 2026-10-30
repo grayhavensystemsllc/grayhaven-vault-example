@@ -596,7 +596,7 @@ Supported keys:
 - `timetracker_secrets.initial_users[].totp_secret`: optional valid Base32 TOTP
   secret. Omit it to require in-application TOTP enrollment.
 - `hosted_domains`: list of domains served by
-  [`grayhaven-config-ansible`](https://github.com/dean1012/grayhaven-config-ansible).
+  [`grayhaven-config-ansible`](https://github.com/grayhavensystemsllc/grayhaven-config-ansible).
 - `hosted_domains[].domain`: apex domain name.
 - `hosted_domains[].deployment`: optional website deployment configuration.
   Omit this block to render the generic fallback site.
