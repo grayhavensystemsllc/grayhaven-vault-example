@@ -26,7 +26,7 @@ encryption.
 code while preserving a documented interface between these repositories:
 
 - [`grayhaven-infra-opentofu`](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu)
-- [`grayhaven-config-ansible`](https://github.com/dean1012/grayhaven-config-ansible)
+- [`grayhaven-config-ansible`](https://github.com/grayhavensystemsllc/grayhaven-config-ansible)
 
 This repository is not a general-purpose deployment template. Deploying similar
 automation for another organization requires review and adaptation.

@@ -53,7 +53,7 @@ In the real private repository, rotate each environment branch deliberately:
    environment variable: `TF_VAR_grayhaven_vault_password_staging` for staging
    or `TF_VAR_grayhaven_vault_password_prod` for production.
 6. In
-   [`grayhaven-config-ansible`](https://github.com/dean1012/grayhaven-config-ansible),
+   [`grayhaven-config-ansible`](https://github.com/grayhavensystemsllc/grayhaven-config-ansible),
    run `playbooks/rotate-vault-password.yml` from the active control bastion so
    deployed bastions persist the new password.
 7. Start a manual runner invocation and confirm it can decrypt the vault.
@@ -111,9 +111,9 @@ example. Real workspace files can contain private operator preferences and
 belong in `grayhaven-vault`.
 
 The
-[operator tmux architecture](https://github.com/dean1012/grayhaven-config-ansible/blob/main/docs/operator-tmux-architecture.md)
+[operator tmux architecture](https://github.com/grayhavensystemsllc/grayhaven-config-ansible/blob/main/docs/operator-tmux-architecture.md)
 documentation in
-[grayhaven-config-ansible](https://github.com/dean1012/grayhaven-config-ansible)
+[grayhaven-config-ansible](https://github.com/grayhavensystemsllc/grayhaven-config-ansible)
 explains how `gtmux` loads workspace files and how to capture an interactive
 tmux layout.
 
