@@ -81,7 +81,7 @@ timetracker:
   backup_retention_days: 14
 
 grayhaven_backupctl:
-  repo_url: https://github.com/dean1012/grayhaven-backupctl.git
+  repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
   checkout_dir: /home/ansible/grayhaven-backupctl
   version: "207a02af4921080efbc46950a14961874952bf92"  # v1.0.4
 
@@ -214,7 +214,7 @@ and `version`:
 
 ```yaml
 grayhaven_backupctl:
-  repo_url: https://github.com/dean1012/grayhaven-backupctl.git
+  repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
   checkout_dir: /home/ansible/grayhaven-backupctl
   version: "207a02af4921080efbc46950a14961874952bf92"  # v1.0.4
 ```
