@@ -18,7 +18,7 @@ timetracker_secrets:
       admin: true
 
 hosted_domains:
-  - domain: grayhavensystems.com
+  - domain: example.com
     deployment:
       type: static
       repository:
@@ -29,14 +29,14 @@ hosted_domains:
       htpasswd_entries:
         - "developer:$2y$05$example-grayhaven"
 
-  - domain: jerry-smith.net
+  - domain: example.net
     deployment:
       type: static
       repository:
         url: https://github.com/example/personal-web.git
         webhook_secret: "example_personal_deploy_webhook_secret"
     dev:
-      auth_realm: jerry-smith.net Development Environment
+      auth_realm: example.net Development Environment
       htpasswd_entries:
         - "developer:$2y$05$example-jerry"
 

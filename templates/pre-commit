@@ -13,6 +13,11 @@ vault_header="\$ANSIBLE_VAULT"
 lint_files=(
   "config.yml"
   "firewall.yml"
+  "infrastructure.yml"
+  "compute.yml"
+  "dns.yml"
+  "baseline/dns.yml"
+  "baseline/ssh-keys.yml"
 )
 
 is_vault_encrypted() {
