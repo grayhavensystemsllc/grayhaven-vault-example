@@ -10,6 +10,11 @@ This document describes the expected files and data shapes for the private
 - [Required Files](#required-files)
 - [`config.yml`](#configyml)
 - [`firewall.yml`](#firewallyml)
+- [`infrastructure.yml`](#infrastructureyml)
+- [`compute.yml`](#computeyml)
+- [`dns.yml`](#dnsyml)
+- [`baseline/dns.yml`](#baselinednsyml)
+- [`baseline/ssh-keys.yml`](#baselinessh-keysyml)
 - [`vault/common.yml`](#vaultcommonyml)
 - [`vault/bastion.yml`](#vaultbastionyml)
 - [`vault/web.yml`](#vaultwebyml)
@@ -22,14 +27,18 @@ Each environment branch must include these files:
 ```text
 config.yml
 firewall.yml
+infrastructure.yml
+compute.yml
+dns.yml
+baseline/dns.yml
+baseline/ssh-keys.yml
 vault/common.yml
 vault/bastion.yml
 vault/web.yml
 vault/mcp.yml
 ```
 
-Infrastructure automation does not provide fallback defaults for missing
-`config.yml`, `firewall.yml`, or vault files.
+Each listed configuration file is required.
 
 [Back to top](#file-schema)
 
@@ -44,7 +53,7 @@ certificate:
   email: admin@example.com
 
 network:
-  vpc_cidr: 10.20.0.0/16
+  vpc_cidr: 172.21.0.0/16
 
 discord_webhook: testing
 
@@ -67,7 +76,7 @@ observability:
     logs_enabled: false
 
 timetracker:
-  hostname: timetracker.staging.grayhavensystems.com
+  hostname: timetracker.staging.example.com
   image_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # build/1.0.0
   data_dir: /var/lib/grayhaven/timetracker/data
   branding_dir: /var/lib/grayhaven/timetracker/branding
@@ -78,10 +87,10 @@ timetracker:
 grayhaven_backupctl:
   repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
   checkout_dir: /home/ansible/grayhaven-backupctl
-  version: "207a02af4921080efbc46950a14961874952bf92"  # v1.0.4
+  version: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # v1.0.0
 
 mcp:
-  hostname: mcp.staging.grayhavensystems.com
+  hostname: mcp.staging.example.com
   image_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # build/1.0.0
   data_dir: /var/lib/grayhaven/mcp/data
   config_dir: /var/lib/grayhaven/mcp/config
@@ -177,7 +186,7 @@ backup:
       homedir_archive_path: /var/backups/deleted-homedir-archives
     remote:
       provider: gcs
-      project_id: grayhaven
+      project_id: example-project
       location: US
       storage_class: STANDARD
 ```
@@ -209,7 +218,7 @@ and `version`:
 grayhaven_backupctl:
   repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
   checkout_dir: /home/ansible/grayhaven-backupctl
-  version: "207a02af4921080efbc46950a14961874952bf92"  # v1.0.4
+  version: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # v1.0.0
 ```
 
 - `grayhaven_backupctl.repo_url`: the reviewed grayhaven-backupctl Git
@@ -376,6 +385,187 @@ allow SSH from bastions to managed hosts.
 
 [Back to top](#file-schema)
 
+## `infrastructure.yml`
+
+Plaintext OpenTofu configuration. Do not store secrets in this file.
+
+- `identity.client_name`: resource-name and tag prefix.
+- `identity.client_domain`: host DNS suffix and infrastructure DNS zone.
+- `identity.organization`: VPC descriptions and certificate organization.
+- `project.name`: DigitalOcean project name.
+- `project.description`, `project.purpose`, `project.environment`, and
+  `project.is_default`: shared project properties.
+- `defaults.region`: DigitalOcean region.
+- `defaults.os_image`: default droplet image slug.
+- `defaults.droplet_size`: default droplet size slug.
+- `baseline.vpc_cidr`: shared baseline VPC CIDR.
+- `repositories.config`: HTTPS configuration-repository URL used by bootstrap.
+- `repositories.vault`: SSH vault-repository URL used by bootstrap.
+
+```yaml
+---
+identity:
+  client_name: example
+  client_domain: example.com
+  organization: Example Company
+
+project:
+  name: example
+  description: Example infrastructure project
+  purpose: Web Application
+  environment: Production
+  is_default: true
+
+defaults:
+  region: nyc1
+  os_image: almalinux-10-x64
+  droplet_size: s-1vcpu-2gb
+
+baseline:
+  vpc_cidr: 172.20.0.0/16
+
+repositories:
+  config: https://github.com/example-org/configuration.git
+  vault: git@github.com:example-org/private-vault.git
+```
+
+[Back to top](#file-schema)
+
+## `compute.yml`
+
+Plaintext environment compute policy.
+
+- `bastions.control_node`: key of the active control bastion.
+- `bastions.instances`: map of bastion instances; at least one is required.
+- `web.instances`: map of web instances; an empty map omits web hosts.
+- `web.tls_mode`: `auto` or `load_balancer`; defaults to `auto`.
+- `mcp.instances`: optional map containing at most one MCP host.
+- Each instance requires `index`; optional `size` and `image` override the
+  defaults in `infrastructure.yml`.
+
+With `auto`, one web host uses host TLS and multiple web hosts use a load
+balancer. MCP hosts use host TLS and require a firewall policy that permits
+HTTPS and restricts SSH to bastions.
+
+```yaml
+---
+bastions:
+  control_node: bastion-02
+  instances:
+    bastion-02:
+      index: 2
+    bastion-05:
+      index: 5
+
+web:
+  tls_mode: auto
+  instances:
+    web-03:
+      index: 3
+
+mcp:
+  instances: {}
+```
+
+[Back to top](#file-schema)
+
+## `dns.yml`
+
+Plaintext environment DNS policy. `ttl` sets the default record TTL. `domains`
+maps stable domain keys to entries with `name`, optional `environment`,
+`protected_records`, and `records`.
+
+- `environment.apex: true` creates the environment web A record.
+- `environment.web_aliases: true` creates `www` and `dev` aliases and requires
+  `environment.apex: true`.
+- `protected_records` and `records` support A, CNAME, and TXT records.
+- Each record requires `type`, `name`, and `value`; `ttl` is optional.
+
+```yaml
+---
+ttl: 600
+
+domains:
+  primary_site:
+    name: example.com
+    environment:
+      apex: true
+      web_aliases: true
+    records:
+      service_cname:
+        type: CNAME
+        name: service.staging
+        value: staging.example.com.
+
+  secondary_site:
+    name: example.net
+    environment:
+      apex: true
+      web_aliases: true
+```
+
+[Back to top](#file-schema)
+
+## `baseline/dns.yml`
+
+Plaintext shared DNS zones and records. Use the `dns.yml` record structure.
+Baseline `protected_records` additionally support MX records with `priority`
+and CAA records with `flags` and `tag`. Mail records belong in this file.
+The baseline workspace reads this file from `main`.
+
+```yaml
+---
+ttl: 600
+
+domains:
+  primary_site:
+    name: example.com
+    protected_records:
+      mail_mx:
+        type: MX
+        name: "@"
+        value: mail.example.org.
+        priority: 10
+      verification_txt:
+        type: TXT
+        name: "@"
+        value: "verification=example-placeholder"
+      issuer_caa:
+        type: CAA
+        name: "@"
+        flags: 0
+        tag: issue
+        value: ca.example.org.
+
+  secondary_site:
+    name: example.net
+    protected_records:
+      mail_mx:
+        type: MX
+        name: "@"
+        value: mail.example.org.
+        priority: 20
+```
+
+[Back to top](#file-schema)
+
+## `baseline/ssh-keys.yml`
+
+Plaintext `admin_ssh_keys` list of first-boot admin public keys. Baseline owns
+the DigitalOcean key resources; environment workspaces resolve those keys by
+name. Do not include private keys.
+
+```yaml
+---
+admin_ssh_keys:
+  - >-
+    ssh-ed25519
+    AAAAexamplePublicKeyMaterial
+    admin@example.com
+```
+
+[Back to top](#file-schema)
+
 ## `vault/common.yml`
 
 `vault/common.yml` stores secrets and private values shared across managed
@@ -522,7 +712,7 @@ timetracker_secrets:
       admin: true
 
 hosted_domains:
-  - domain: grayhavensystems.com
+  - domain: example.com
     deployment:
       type: static
       repository:
