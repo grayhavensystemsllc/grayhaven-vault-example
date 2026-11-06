@@ -19,7 +19,7 @@ are documented in [File Schema](schema.md).
 
 ## Vault Encryption
 
-The real private repository keeps `config.yml` and `firewall.yml` plaintext and
+The real private repository keeps non-secret configuration files plaintext and
 encrypts all files under `vault/` with Ansible Vault before use.
 
 This example repository keeps `vault/` files in plaintext only so the expected

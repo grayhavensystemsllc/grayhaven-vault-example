@@ -17,7 +17,7 @@ selectors, and encrypted operational values.
 
 In the real private repository:
 
-- `config.yml` and `firewall.yml` remain plaintext.
+- Non-secret configuration files listed in [File Schema](schema.md) are plaintext.
 - Files under `vault/` are encrypted with Ansible Vault.
 - Each environment branch carries a complete configured copy of all required
   files.
@@ -47,8 +47,8 @@ but the required refs must be fetched locally.
 ## Automation Consumers
 
 [`grayhaven-infra-opentofu`](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu)
-reads `config.yml` and `firewall.yml` from the workspace-selected Git ref in a
-local checkout during OpenTofu plan and apply.
+reads plaintext configuration from the workspace-selected Git ref in a local
+checkout during OpenTofu plan and apply.
 
 [`grayhaven-config-ansible`](https://github.com/grayhavensystemsllc/grayhaven-config-ansible)
 uses the `grayhaven-vault-ref` cloud tag to check out the same environment ref

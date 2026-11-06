@@ -4,7 +4,7 @@ certificate:
   email: admin@example.com
 
 network:
-  vpc_cidr: 10.30.0.0/16
+  vpc_cidr: 172.22.0.0/16
 
 discord_webhook: production
 
@@ -15,7 +15,7 @@ backup:
       homedir_archive_path: /var/backups/deleted-homedir-archives
     remote:
       provider: gcs
-      project_id: grayhaven
+      project_id: example-project
       location: US
       storage_class: STANDARD
   schedule: daily
@@ -32,7 +32,7 @@ observability:
     logs_enabled: true
 
 timetracker:
-  hostname: timetracker.grayhavensystems.com
+  hostname: timetracker.example.com
   image_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # build/1.0.0
   data_dir: /var/lib/grayhaven/timetracker/data
   branding_dir: /var/lib/grayhaven/timetracker/branding
@@ -43,10 +43,10 @@ timetracker:
 grayhaven_backupctl:
   repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
   checkout_dir: /home/ansible/grayhaven-backupctl
-  version: "207a02af4921080efbc46950a14961874952bf92"  # v1.0.4
+  version: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # v1.0.0
 
 mcp:
-  hostname: mcp.grayhavensystems.com
+  hostname: mcp.example.com
   image_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # build/1.0.0
   data_dir: /var/lib/grayhaven/mcp/data
   config_dir: /var/lib/grayhaven/mcp/config

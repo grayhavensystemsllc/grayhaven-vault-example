@@ -1,0 +1,31 @@
+---
+ttl: 600
+
+domains:
+  primary_site:
+    name: example.com
+    protected_records:
+      mail_mx:
+        type: MX
+        name: "@"
+        value: mail.example.org.
+        priority: 10
+      verification_txt:
+        type: TXT
+        name: "@"
+        value: "verification=example-placeholder"
+      issuer_caa:
+        type: CAA
+        name: "@"
+        flags: 0
+        tag: issue
+        value: ca.example.org.
+
+  secondary_site:
+    name: example.net
+    protected_records:
+      mail_mx:
+        type: MX
+        name: "@"
+        value: mail.example.org.
+        priority: 20
