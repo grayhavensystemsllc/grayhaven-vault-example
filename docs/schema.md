@@ -397,10 +397,6 @@ repositories:
 
 Plaintext environment compute policy.
 
-- `bootstrap.control_public_key`: current Ansible control public key. Keep it
-  equal to `ansible_control.public_key` in `vault/bastion.yml` so new hosts
-  trust the control node before their first convergence.
-
 - `bastions.control_node`: key of the active control bastion.
 - `bastions.instances`: map of bastion instances; at least one is required.
 - `web.instances`: map of web instances; an empty map omits web hosts.
@@ -415,9 +411,6 @@ HTTPS and restricts SSH to bastions.
 
 ```yaml
 ---
-bootstrap:
-  control_public_key: "ssh-ed25519 AAAAexample operator@example.com"
-
 bastions:
   control_node: bastion-02
   instances:
@@ -836,6 +829,7 @@ Supported keys:
   node to reach managed hosts.
 - `ansible_control.public_key`: public key installed for the `ansible`
   automation user on managed hosts.
+  OpenTofu reads this encrypted source to authorize new hosts during bootstrap.
 - `digitalocean_inventory_api_token`: DigitalOcean API token used for dynamic
   inventory discovery.
 - `discord_webhooks.production`: production Discord notification webhook URL.

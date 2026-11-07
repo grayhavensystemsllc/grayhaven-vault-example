@@ -1,7 +1,4 @@
 ---
-bootstrap:
-  control_public_key: "ssh-ed25519 AAAAexample operator@example.com"
-
 bastions:
   control_node: bastion-02
   instances:
