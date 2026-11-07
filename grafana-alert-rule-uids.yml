@@ -1,0 +1,3 @@
+---
+"host:app.example.com:cpu": "gh-111111111111111111111111"
+"host:app.example.com:memory": "gh-222222222222222222222222"
