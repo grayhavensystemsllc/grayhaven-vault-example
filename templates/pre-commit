@@ -12,13 +12,15 @@ failures=()
 vault_header="\$ANSIBLE_VAULT"
 lint_files=(
   "config.yml"
-  "firewall.yml"
-  "infrastructure.yml"
-  "compute.yml"
-  "operations.yml"
-  "dns.yml"
-  "baseline/dns.yml"
-  "baseline/ssh-keys.yml"
+  "server_configuration.yml"
+  "ansible.yml"
+  "policy/infrastructure.yml"
+  "policy/compute.yml"
+  "policy/firewall.yml"
+  "policy/dns.yml"
+  "policy/baseline/dns.yml"
+  "policy/baseline/ssh-keys.yml"
+  "grafana/observability.yml"
 )
 
 is_vault_encrypted() {
@@ -52,7 +54,7 @@ for vault_file in "${required_vault_files[@]}"; do
   fi
 done
 
-for optional_file in grafana-alert-rule-uids.yml grafana-alert-rules.yml; do
+for optional_file in grafana/grafana-alert-rule-uids.yml grafana/grafana-alert-rules.yml; do
   [[ ! -f "$optional_file" ]] || lint_files+=("$optional_file")
 done
 

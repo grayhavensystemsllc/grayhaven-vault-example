@@ -63,7 +63,8 @@ git config core.hooksPath .githooks
 
 ## Configure the Production Environment
 
-Edit `config.yml`, `firewall.yml`, and the files under `vault/` for production
+Edit `config.yml`, `server_configuration.yml`, `ansible.yml`, policies under
+`policy/`, Grafana settings under `grafana/`, and files under `vault/` for production
 using the production values generated during the
 [setup process](https://github.com/grayhavensystemsllc/grayhaven-infra-opentofu/blob/main/docs/setup.md)
 in the
@@ -100,7 +101,8 @@ git switch -c staging
 ansible-vault decrypt vault/*.yml
 ```
 
-Edit `config.yml`, `firewall.yml`, and the files under `vault/` using the
+Edit `config.yml`, `server_configuration.yml`, `ansible.yml`, policies under
+`policy/`, Grafana settings under `grafana/`, and files under `vault/` using the
 staging values generated during infrastructure setup where applicable.
 
 Encrypt the `vault/*.yml` files with the staging Ansible Vault passphrase
