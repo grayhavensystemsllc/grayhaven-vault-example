@@ -1,11 +1,8 @@
 ---
-# Example plaintext only.
-# Real grayhaven-vault files under vault/ must be encrypted with Ansible Vault.
-
 root_password_hash: "$6$example-root-password-hash"
 
 restic:
-  encryption_password: "example-restic-password"
+  passphrase: "example-restic-password"
   remotes:
     gcs:
       credentials_json: |
@@ -26,7 +23,6 @@ users:
     tmux_auto_attach: true
     tmux_workspace: jdoe.tmux
     state: present
-
   - username: oldadmin
     full_name: Old Admin
     password_hash: "$6$example-old-admin-password-hash"
