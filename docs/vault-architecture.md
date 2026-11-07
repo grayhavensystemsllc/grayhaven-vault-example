@@ -53,6 +53,8 @@ checkout during OpenTofu plan and apply.
 [`grayhaven-config-ansible`](https://github.com/grayhavensystemsllc/grayhaven-config-ansible)
 uses the `grayhaven-vault-ref` cloud tag to check out the same environment ref
 on the active control bastion during convergence and reads the matching
-`config.yml`, `firewall.yml`, and `vault/*.yml` files.
+`infrastructure.yml`, `operations.yml`, `config.yml`, `firewall.yml`, and
+`vault/*.yml` files. Production alert definitions and UID mappings also come
+from the production branch.
 
 [Back to top](#vault-architecture)
