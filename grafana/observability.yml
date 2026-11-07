@@ -1,0 +1,49 @@
+---
+observability:
+  grafana_cloud:
+    enabled: true
+    logs_enabled: true
+  alerting:
+    initial_silence_minutes: 15
+    thresholds:
+      cpu_percent: 75
+      memory_percent: 75
+      filesystem_percent: 80
+      filesystem_inode_percent: 80
+      swap_percent: 80
+  collectors:
+    gcs_bucket_check:
+      schedule: "*-*-* 03:30:00"
+    gcs_operations:
+      refresh_seconds: 3600
+      monthly_warning_operations:
+        class_a: 4000
+        class_b: 40000
+    google_monitoring_usage:
+      monthly_warning_series: 800000
+  external_services:
+    sample:
+      name: Example Provider
+      url: https://status.example.com/api/v2/summary.json
+      components:
+        - id: sample-component
+          name: Example Service
+    proton:
+      services:
+        - name: Example Mail
+          component_name: Example Mail Service
+    google_cloud:
+      storage:
+        title: Example Storage
+        id: example-storage
+      monitoring:
+        title: Example Monitoring
+        id: example-monitoring
+  service_units:
+    common:
+      - name: example.service
+        check: example_service
+        summary: Example service is unavailable
+    web: []
+    mcp: []
+    control_node: []
