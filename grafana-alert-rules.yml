@@ -1,0 +1,26 @@
+---
+parameters: {}
+templates:
+  - name: utilization
+    template: |
+      {% set rules = [] %}
+      {% for host in config["hosts"] %}
+        {% set selection = host_selector(host["fqdn"]) %}
+        {% set checks = [
+          ("cpu", "CPU utilization", "100 * (1 - avg(rate(node_cpu_seconds_total{" ~
+            selection ~ ",mode=\"idle\"}[4m])))", config["thresholds"]["cpu_percent"]),
+          ("memory", "Memory utilization", "100 * (1 - max(node_memory_MemAvailable_bytes{" ~
+            selection ~ "}) / max(node_memory_MemTotal_bytes{" ~ selection ~ "}))",
+            config["thresholds"]["memory_percent"])
+        ] %}
+        {% for check, title, expression, threshold in checks %}
+          {% do rules.append(alert_rule(
+            identity=host_rule_identity(host, check), uid_registry=config["uid_registry"],
+            title=host["short_hostname"] ~ " " ~ title, folder_uid=folder_uid,
+            rule_group=config["grafana"]["evaluation_group"], datasource_uid=datasource_uid,
+            expression=expression, evaluator_type="gt", threshold=threshold, duration="7m",
+            labels=host_labels(config, host, check), annotations={"summary": title ~ " is high"},
+            contact_point=config["grafana"]["contact_point"])) %}
+        {% endfor %}
+      {% endfor %}
+      {{ rules | tojson }}

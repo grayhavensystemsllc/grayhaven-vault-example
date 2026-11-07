@@ -12,6 +12,9 @@ This document describes the expected files and data shapes for the private
 - [`firewall.yml`](#firewallyml)
 - [`infrastructure.yml`](#infrastructureyml)
 - [`compute.yml`](#computeyml)
+- [`operations.yml`](#operationsyml)
+- [`grafana-alert-rule-uids.yml`](#grafana-alert-rule-uidsyml)
+- [`grafana-alert-rules.yml`](#grafana-alert-rulesyml)
 - [`dns.yml`](#dnsyml)
 - [`baseline/dns.yml`](#baselinednsyml)
 - [`baseline/ssh-keys.yml`](#baselinessh-keysyml)
@@ -29,6 +32,7 @@ config.yml
 firewall.yml
 infrastructure.yml
 compute.yml
+operations.yml
 dns.yml
 baseline/dns.yml
 baseline/ssh-keys.yml
@@ -38,7 +42,8 @@ vault/web.yml
 vault/mcp.yml
 ```
 
-Each listed configuration file is required.
+Each listed configuration file is required. Production also includes
+`grafana-alert-rule-uids.yml` and `grafana-alert-rules.yml`.
 
 [Back to top](#file-schema)
 
@@ -443,6 +448,10 @@ repositories:
 
 Plaintext environment compute policy.
 
+- `bootstrap.control_public_key`: current Ansible control public key. Keep it
+  equal to `ansible_control_public_key` in `vault/bastion.yml` so new hosts
+  trust the control node before their first convergence.
+
 - `bastions.control_node`: key of the active control bastion.
 - `bastions.instances`: map of bastion instances; at least one is required.
 - `web.instances`: map of web instances; an empty map omits web hosts.
@@ -457,6 +466,9 @@ HTTPS and restricts SSH to bastions.
 
 ```yaml
 ---
+bootstrap:
+  control_public_key: "ssh-ed25519 AAAAexample operator@example.com"
+
 bastions:
   control_node: bastion-02
   instances:
@@ -478,6 +490,55 @@ mcp:
     mcp-07:
       index: 7
 ```
+
+[Back to top](#file-schema)
+
+## `operations.yml`
+
+Plaintext runtime settings shared by OpenTofu bootstrap and Ansible.
+Keys use the role variable names consumed by `grayhaven-config-ansible`.
+The file supplies package lists, resolver and time settings, service schedules,
+resource limits, application paths, source repositories, and monitoring choices.
+`config.yml` supplies environment selectors and can override matching settings.
+Secrets remain in `vault/*.yml`.
+
+The complete example file provides the supported settings. For example:
+
+```yaml
+---
+baseline_validation_timezone: UTC
+automation_runner_schedule: "*-*-* 01:30:00"
+automation_poller_schedule: "*-*-* *:0/10:00"
+automation_runner_cpu_quota_percent: 40
+```
+
+[Back to top](#file-schema)
+
+## `grafana-alert-rule-uids.yml`
+
+Production-only plaintext mapping from stable alert identities to existing UIDs.
+Keep entries when moving existing rules to preserve their Grafana history.
+Unlisted identities receive deterministic UIDs derived from their identity.
+
+```yaml
+---
+"host:app.example.com:cpu": "gh-111111111111111111111111"
+"host:app.example.com:memory": "gh-222222222222222222222222"
+```
+
+[Back to top](#file-schema)
+
+## `grafana-alert-rules.yml`
+
+Production-only plaintext alert definitions. `parameters` contains shared policy
+values. Each `templates` entry has a `name` and a Jinja `template` that renders
+one alert object or a list of alert objects as JSON. Templates use the generic
+`alert_rule`, label, selector, and dependency helpers provided by the sync tool.
+The rendering context excludes API credentials.
+
+The example contains CPU and memory utilization rules. Thresholds, names,
+expressions, pending periods, and dependencies belong in this file or its
+runtime settings. The sync tool manages rules for the configured client only.
 
 [Back to top](#file-schema)
 
@@ -842,24 +903,25 @@ Environment workspaces own computed runtime DNS records for hosted domains.
 ## `vault/mcp.yml`
 
 `vault/mcp.yml` stores the MCP configuration decryption password and private
-container registry credentials.
+GitHub credentials.
 
 ```yaml
 ---
 # Example plaintext only. Encrypt this file in the private vault repository.
 mcp_secrets:
   config_passphrase: "example_encrypted_config_password_replace_before_deployment"
-  registry_username: "username"
-  registry_token: "example_read_packages_token_replace_before_deployment"
+  github_username: "username"
+  github_pat: "example_read_packages_token_replace_before_deployment"
 ```
 
 Supported keys:
 
 - `mcp_secrets.config_passphrase`: password used to decrypt
   `config.secrets.enc`.
-- `mcp_secrets.registry_username`: GitHub username used for private GHCR pulls.
+- `mcp_secrets.github_username`: GitHub username that owns the personal access token.
   Write the username as a quoted string, for example `"username"`.
-- `mcp_secrets.registry_token`: GitHub personal access token used for private
-  GHCR pulls. The token requires `read:packages`.
+- `mcp_secrets.github_pat`: GitHub personal access token used for private
+  GHCR pulls and read-only configuration downloads from the private repository.
+  The token requires `read:packages` and repository contents read access.
 
 [Back to top](#file-schema)

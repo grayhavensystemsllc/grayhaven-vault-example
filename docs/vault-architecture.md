@@ -1,7 +1,7 @@
 # Vault Architecture
 
-This document describes how `grayhaven-vault` is used by Grayhaven Systems LLC
-infrastructure automation. File formats are documented in
+This document describes how the private `grayhaven-vault` repository is used by
+Grayhaven Systems LLC infrastructure automation. File formats are documented in
 [File Schema](schema.md).
 
 ## Table of Contents
@@ -12,8 +12,8 @@ infrastructure automation. File formats are documented in
 
 ## Repository Role
 
-`grayhaven-vault` provides environment-specific configuration, shared plaintext
-selectors, and encrypted operational values.
+The private `grayhaven-vault` repository provides environment-specific
+configuration, shared plaintext selectors, and encrypted operational values.
 
 In the real private repository:
 
@@ -53,6 +53,8 @@ checkout during OpenTofu plan and apply.
 [`grayhaven-config-ansible`](https://github.com/grayhavensystemsllc/grayhaven-config-ansible)
 uses the `grayhaven-vault-ref` cloud tag to check out the same environment ref
 on the active control bastion during convergence and reads the matching
-`config.yml`, `firewall.yml`, and `vault/*.yml` files.
+`infrastructure.yml`, `operations.yml`, `config.yml`, `firewall.yml`, and
+`vault/*.yml` files. Production alert definitions and UID mappings also come
+from the production branch.
 
 [Back to top](#vault-architecture)
