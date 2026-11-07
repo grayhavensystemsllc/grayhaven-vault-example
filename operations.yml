@@ -1,0 +1,203 @@
+---
+
+# Admin Access
+admin_access_default_homedir_archive_path: /var/backups/deleted-homedir-archives
+admin_access_vault_checkout_dir: >-
+  {{ baseline_validation_vault_checkout_dir | default('/home/ansible/grayhaven-vault') }}
+admin_access_tmux_workspace_dir: "{{ admin_access_vault_checkout_dir }}/files/tmux-workspaces"
+
+# Automation Notifications
+automation_notifications_environment: prod
+automation_notifications_timezone: UTC
+automation_notifications_target: "{{ inventory_hostname }}"
+
+automation_notifications_colors:
+  info: 5811424
+  success: 4175499
+  warning: 13211450
+  error: 14042437
+
+# Automation Runner
+automation_runner_checkout_dir: /home/ansible/grayhaven-config-ansible
+automation_runner_repo_url: "{{ infrastructure.repositories.config }}"
+automation_runner_workspace_dir: /home/ansible/ansible-runner
+
+# Backupctl
+grayhaven_backupctl:  # noqa var-naming[no-role-prefix]
+  repo_url: https://github.com/example-org/grayhaven-backupctl.git
+  checkout_dir: /home/ansible/grayhaven-backupctl
+  version: 207a02af4921080efbc46950a14961874952bf92
+backupctl_state_dir: /var/lib/grayhaven/backupctl
+backupctl_venv_dir: /opt/grayhaven/grayhaven-backupctl-venv
+backupctl_libexec_dir: /usr/local/libexec/grayhaven-backupctl
+backupctl_command_path: /usr/local/sbin/grayhaven-backupctl
+
+# Baseline Validation
+baseline_validation_environment: "{{ grayhaven_environment | default('prod') }}"
+baseline_validation_timezone: "{{ grayhaven_timezone | default('UTC') }}"
+baseline_validation_certificate_environment: "{{ grayhaven_certificate_environment | default('staging') }}"
+baseline_validation_tls_mode: "{{ grayhaven_tls_mode | default('host') }}"
+baseline_validation_vault_checkout_dir: "{{ grayhaven_vault_checkout_dir | default('/home/ansible/grayhaven-vault') }}"
+
+# Branding
+branding_repository_url: https://github.com/example-org/grayhaven-branding.git
+branding_checkout_dir: /home/ansible/grayhaven-branding
+
+# Deploy Websites
+deploy_websites_environment: prod
+deploy_websites_root: /var/www
+deploy_websites_checkout_root: /home/ansible/website-repos
+deploy_websites_fallback_root: /home/ansible/website-fallbacks
+deploy_websites_rendered_root: /home/ansible/website-rendered
+deploy_websites_frontend_path: site/frontend
+deploy_websites_config_dir: /etc/grayhaven/websites
+deploy_websites_runtime_dir: /run/grayhaven-website-deploy
+deploy_websites_state_dir: /var/lib/grayhaven/website-deploy
+deploy_websites_webhook_bind_host: 127.0.0.1
+deploy_websites_webhook_bind_port: 8791
+deploy_websites_fanout_bind_host: 0.0.0.0
+deploy_websites_fanout_timeout_seconds: 30
+deploy_websites_fanout_retries: 2
+deploy_websites_github_meta_url: https://api.github.com/meta
+
+deploy_websites_certbot_email: ""
+deploy_websites_certificate_environment: staging
+deploy_websites_tls_mode: host
+deploy_websites_certbot_environment: "{{ deploy_websites_certificate_environment }}"
+deploy_websites_certbot_credentials_file: /etc/letsencrypt/digitalocean.ini
+deploy_websites_dev_htpasswd_dir: /etc/nginx/grayhaven-dev.htpasswd.d
+
+deploy_websites_packages:
+  - certbot
+  - git
+  - nginx
+  - python3-certbot-dns-digitalocean
+  - python3-certbot-nginx
+  - rsync
+
+deploy_websites_hosted_domains: "{{ hosted_domains | default([]) }}"
+
+# Dns Resolver
+dns_resolver_quad9_resolvers:
+  - 9.9.9.9
+  - 149.112.112.112
+
+# Firewalld Policy
+firewalld_policy_ssh_args: -C -o ControlMaster=no -o ControlPersist=no -o ControlPath=none
+
+# Managed Inventory
+managed_inventory_network_vpc_cidr: "{{ grayhaven_network_vpc_cidr | default('') }}"
+managed_inventory_fallback_vpc_cidr: "{{ managed_inventory_network_vpc_cidr }}"
+
+# Mcp
+mcp_user: mcp
+mcp_group: mcp
+mcp_uid: 778
+mcp_gid: 778
+mcp_root: /var/lib/grayhaven/mcp
+mcp_image_repository: ghcr.io/example-org/grayhaven-mcp
+mcp_configuration_api_url: https://api.github.com/repos/example-org/grayhaven-mcp
+mcp_configuration_environment: >-
+  {{ 'production' if baseline_validation_environment in ['prod', 'production'] else 'staging' }}
+mcp_container_name: grayhaven-mcp
+mcp_service_name: grayhaven-mcp.service
+mcp_host_port: 8787
+mcp_config_overrides: {}
+mcp_tls_mode: host
+mcp_certbot_credentials_file: /etc/letsencrypt/digitalocean.ini
+mcp_certbot_marker_dir: /etc/grayhaven/certbot
+mcp_health_path: /healthz
+mcp_readiness_path: /readyz
+mcp_maintenance_cpu_quota_percent: 20
+mcp_maintenance_cpu_weight: 20
+
+# Swap
+swap_swapfile_path: "{{ swapfile_path | default('/swapfile') }}"
+swap_swapfile_size: "{{ swapfile_size | default('1G') }}"
+
+# System Packages
+system_packages_ansible_runtime_venv: /home/ansible/ansible-runner/ansible-runtime
+
+system_packages_bootstrap_runner_packages:
+  - git
+  - python3-pip
+
+system_packages_admin_packages:
+  - bash-completion
+  - bind-utils
+  - epel-release
+  - python3
+  - python3-pip
+  - setroubleshoot-server
+  - tmux
+  - vim
+
+system_packages_required_packages:
+  - audit
+  - chrony
+  - curl
+  - fail2ban
+  - firewalld
+  - git
+  - httpd-tools
+  - NetworkManager
+  - openssh-server
+  - podman
+  - python3-firewall
+  - python3-libselinux
+  - restic
+  - yum-utils
+
+system_packages_unneeded_packages:
+  - avahi
+  - bluez
+  - cups
+  - nfs-utils
+  - rpcbind
+  - samba
+
+system_packages_unneeded_services:
+  - avahi-daemon
+  - bluetooth
+  - cups
+  - nfs-server
+  - rpcbind
+  - smb
+
+# Time Sync
+time_sync_ntp_pool: 2.almalinux.pool.ntp.org
+
+# Timetracker
+timetracker_user: timetracker
+timetracker_group: timetracker
+timetracker_uid: 777
+timetracker_gid: 777
+timetracker_container_name: grayhaven-timetracker
+timetracker_container_port: 8000
+timetracker_host_port: 8000
+timetracker_image_repository: ghcr.io/example-org/grayhaven-timetracker
+timetracker_database_filename: timetracker.sqlite3
+timetracker_quadlet_dir: /etc/containers/systemd
+timetracker_quadlet_path: "{{ timetracker_quadlet_dir }}/grayhaven-timetracker.container"
+timetracker_service_name: grayhaven-timetracker.service
+timetracker_webauthn_rp_id: "{{ timetracker.hostname }}"
+timetracker_webauthn_origin: "https://{{ timetracker.hostname }}"
+timetracker_backup_retention_days: "{{ timetracker.backup_retention_days | default(14) }}"
+timetracker_branding_source_root: "{{ branding_checkout_dir }}"
+timetracker_tls_mode: "{{ baseline_validation_tls_mode | default('host') }}"
+timetracker_certificate_environment: "{{ baseline_validation_certificate_environment | default('staging') }}"
+timetracker_certbot_credentials_file: /etc/letsencrypt/digitalocean.ini
+timetracker_certbot_marker_dir: /etc/grayhaven/certbot
+timetracker_health_retries: 30
+timetracker_health_delay: 2
+
+# Operational schedules and limits
+automation_runner_schedule: "*-*-* 01:30:00"
+automation_poller_schedule: "*-*-* *:0/10:00"
+automation_runner_cpu_quota_percent: 40
+restic_backup_schedule: "*-*-* 00:30:00"
+restic_integrity_schedule: "Sun *-*-* 02:30:00"
+managed_client_name: "{{ infrastructure.identity.client_name }}"
+
+mcp_pids_limit: 256
+timetracker_pids_limit: 128
