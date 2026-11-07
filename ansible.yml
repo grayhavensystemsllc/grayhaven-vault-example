@@ -1,0 +1,14 @@
+---
+ansible:
+  runner:
+    schedule: "*-*-* 01:30:00"
+    cpu_quota_percent: 40
+  poller:
+    schedule: "*-*-* *:0/10:00"
+  notifications:
+    environment: staging
+    colors:
+      info: 5811424
+      success: 4175499
+      warning: 13211450
+      error: 14042437

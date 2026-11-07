@@ -3,28 +3,19 @@ certificate:
   environment: staging
   email: admin@example.com
 
-network:
-  vpc_cidr: 172.21.0.0/16
-
-discord_webhook: testing
-
 backup:
   repositories:
     local:
       repository_path: /var/backups/restic
       homedir_archive_path: /var/backups/deleted-homedir-archives
-  schedule: daily
+  schedule: "*-*-* 00:30:00"
+  integrity_schedule: "Sun *-*-* 02:30:00"
   retention:
     keep_daily: 7
   include:
     - /home
     - /var/log
   exclude: []
-
-observability:
-  grafana_cloud:
-    enabled: false
-    logs_enabled: false
 
 timetracker:
   hostname: timetracker.staging.example.com
@@ -34,6 +25,7 @@ timetracker:
   secrets_dir: /var/lib/grayhaven/timetracker/secrets
   backup_dir: /var/lib/grayhaven/timetracker/backups
   backup_retention_days: 14
+  pids_limit: 128
 
 grayhaven_backupctl:
   repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
@@ -49,3 +41,7 @@ mcp:
   sessions_dir: /var/lib/grayhaven/mcp/sessions
   backup_dir: /var/lib/grayhaven/mcp/backups
   backup_retention_days: 14
+  maintenance:
+    cpu_quota_percent: 20
+    cpu_weight: 20
+  pids_limit: 256

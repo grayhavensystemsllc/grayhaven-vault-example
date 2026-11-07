@@ -9,13 +9,15 @@ This document describes the expected files and data shapes for the private
 
 - [Required Files](#required-files)
 - [`config.yml`](#configyml)
-- [`firewall.yml`](#firewallyml)
-- [`infrastructure.yml`](#infrastructureyml)
-- [`compute.yml`](#computeyml)
-- [`operations.yml`](#operationsyml)
-- [`dns.yml`](#dnsyml)
-- [`baseline/dns.yml`](#baselinednsyml)
-- [`baseline/ssh-keys.yml`](#baselinessh-keysyml)
+- [`server_configuration.yml`](#server_configurationyml)
+- [`ansible.yml`](#ansibleyml)
+- [`policy/infrastructure.yml`](#policyinfrastructureyml)
+- [`policy/compute.yml`](#policycomputeyml)
+- [`policy/firewall.yml`](#policyfirewallyml)
+- [`policy/dns.yml`](#policydnsyml)
+- [`policy/baseline/dns.yml`](#policybaselinednsyml)
+- [`policy/baseline/ssh-keys.yml`](#policybaselinessh-keysyml)
+- [`grafana/observability.yml`](#grafanaobservabilityyml)
 - [`vault/common.yml`](#vaultcommonyml)
 - [`vault/bastion.yml`](#vaultbastionyml)
 - [`vault/web.yml`](#vaultwebyml)
@@ -23,24 +25,30 @@ This document describes the expected files and data shapes for the private
 
 ## Required Files
 
-Each environment branch must include these files:
+Each environment branch includes these files:
 
 ```text
 config.yml
-firewall.yml
-infrastructure.yml
-compute.yml
-operations.yml
-dns.yml
-baseline/dns.yml
-baseline/ssh-keys.yml
+server_configuration.yml
+ansible.yml
+policy/infrastructure.yml
+policy/compute.yml
+policy/firewall.yml
+policy/dns.yml
+policy/baseline/dns.yml
+policy/baseline/ssh-keys.yml
+grafana/observability.yml
 vault/common.yml
 vault/bastion.yml
 vault/web.yml
 vault/mcp.yml
 ```
 
-Each listed configuration file is required.
+Production also includes `grafana/grafana-alert-rule-uids.yml` and
+`grafana/grafana-alert-rules.yml`.
+
+All files in this example repository remain plaintext. Keep the files under
+`vault/` encrypted in the private repository.
 
 [Back to top](#file-schema)
 
@@ -54,28 +62,19 @@ certificate:
   environment: staging
   email: admin@example.com
 
-network:
-  vpc_cidr: 172.21.0.0/16
-
-discord_webhook: testing
-
 backup:
   repositories:
     local:
       repository_path: /var/backups/restic
       homedir_archive_path: /var/backups/deleted-homedir-archives
-  schedule: daily
+  schedule: "*-*-* 00:30:00"
+  integrity_schedule: "Sun *-*-* 02:30:00"
   retention:
     keep_daily: 7
   include:
     - /home
     - /var/log
   exclude: []
-
-observability:
-  grafana_cloud:
-    enabled: false
-    logs_enabled: false
 
 timetracker:
   hostname: timetracker.staging.example.com
@@ -85,6 +84,7 @@ timetracker:
   secrets_dir: /var/lib/grayhaven/timetracker/secrets
   backup_dir: /var/lib/grayhaven/timetracker/backups
   backup_retention_days: 14
+  pids_limit: 128
 
 grayhaven_backupctl:
   repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
@@ -100,6 +100,10 @@ mcp:
   sessions_dir: /var/lib/grayhaven/mcp/sessions
   backup_dir: /var/lib/grayhaven/mcp/backups
   backup_retention_days: 14
+  maintenance:
+    cpu_quota_percent: 20
+    cpu_weight: 20
+  pids_limit: 256
 ```
 
 Supported keys:
@@ -107,10 +111,6 @@ Supported keys:
 - `certificate.environment`: `staging` or `production`.
 - `certificate.email`: email address supplied to Certbot for web certificate
   registration and renewal.
-- `discord_webhook`: `testing` or `production`.
-- `network.vpc_cidr`: environment VPC CIDR block. This value is read by
-  OpenTofu when creating the environment VPC and by Ansible when deriving
-  private-source fallback rules.
 - `backup.repositories.local.repository_path`: local restic repository path.
 - `backup.repositories.local.homedir_archive_path`: local path for removed user
   home directory archives.
@@ -124,19 +124,15 @@ Supported keys:
   location. Defaults to `US`.
 - `backup.repositories.remote.storage_class`: optional Google Cloud Storage
   bucket storage class. Defaults to `STANDARD`.
-- `backup.schedule`: backup schedule. Only `daily` is supported at this time.
+- `backup.schedule`: local backup timer schedule in systemd calendar syntax.
+- `backup.integrity_schedule`: local integrity-check timer schedule in
+  systemd calendar syntax.
 - `backup.retention.keep_daily`: number of daily restic snapshots retained.
-- `backup.include`: optional list of additional paths to include in backups.
+- `backup.include`: list of additional paths to include in backups.
   The configured homedir archive path is always included automatically.
-- `backup.exclude`: optional list of additional paths to exclude from backups.
+- `backup.exclude`: list of additional paths to exclude from backups.
   Excludes can override automatically included paths, including the configured
   homedir archive path.
-- `observability.grafana_cloud.enabled`: optional boolean. When true in
-  production, enables Grafana Cloud metrics and managed alert-rule automation.
-  Defaults to false.
-- `observability.grafana_cloud.logs_enabled`: optional boolean. When true and
-  Grafana Cloud observability is enabled, enables Grafana Cloud log shipping.
-  Defaults to false.
 - `timetracker`: required Time Tracker deployment settings. The application is
   deployed to web hosts; there is no enable flag.
 - Time Tracker branding is not a vault setting. Deployment automation updates
@@ -151,8 +147,9 @@ Supported keys:
   files.
 - `timetracker.backup_dir`: directory containing verified encrypted database
   backup artifacts captured by restic.
-- `timetracker.backup_retention_days`: optional local verified-artifact
-  retention period from 1 through 365 days. Defaults to 14.
+- `timetracker.backup_retention_days`: local verified-artifact retention
+  period from 1 through 365 days.
+- `timetracker.pids_limit`: container process limit.
 - `grayhaven_backupctl`: backup operator utility settings described in
   [Backup Operator Utility](#backup-operator-utility).
 - `mcp`: deployment settings required when an MCP host is provisioned.
@@ -167,8 +164,12 @@ Supported keys:
   existing sessions.
 - `mcp.backup_dir`: directory containing verified encrypted database snapshots
   included automatically in host backups.
-- `mcp.backup_retention_days`: optional local verified-artifact retention period
-  from 1 through 365 days. Defaults to 14.
+- `mcp.backup_retention_days`: local verified-artifact retention
+  period from 1 through 365 days.
+
+- `mcp.maintenance.cpu_quota_percent`: CPU quota for MCP maintenance processes.
+- `mcp.maintenance.cpu_weight`: relative CPU weight for MCP maintenance processes.
+- `mcp.pids_limit`: container process limit.
 
 MCP always uses a production certificate trusted by external clients, including
 in staging. The global certificate setting applies to other servers.
@@ -181,6 +182,7 @@ Google Cloud Storage bucket per managed host before configuring restic. Bucket
 names use the short hostname with `-restic` appended.
 
 ```yaml
+---
 backup:
   repositories:
     local:
@@ -202,21 +204,13 @@ When remote backups are enabled, the matching encrypted `vault/common.yml` file
 must define the Google Cloud Storage credentials described in
 [`vault/common.yml`](#vaultcommonyml).
 
-### Observability
-
-Grafana Cloud observability is supported only for the production environment at
-this time. Leave `observability.grafana_cloud.enabled` and
-`observability.grafana_cloud.logs_enabled` set to false on the staging
-environment.
-
-Staging may still be inspected through the DigitalOcean metrics dashboard.
-
 ### Backup Operator Utility
 
 The `grayhaven_backupctl` mapping contains exactly `repo_url`, `checkout_dir`,
 and `version`:
 
 ```yaml
+---
 grayhaven_backupctl:
   repo_url: https://github.com/grayhavensystemsllc/grayhaven-backupctl.git
   checkout_dir: /home/ansible/grayhaven-backupctl
@@ -232,9 +226,221 @@ grayhaven_backupctl:
 
 [Back to top](#file-schema)
 
-## `firewall.yml`
+## `server_configuration.yml`
 
-`firewall.yml` is plaintext and is read by OpenTofu and Ansible.
+Plaintext server settings shared by infrastructure bootstrap and Ansible.
+
+```yaml
+---
+timezone: UTC
+
+network:
+  vpc_cidr: 172.21.0.0/16
+  dns_resolvers:
+    - 192.0.2.53
+    - 198.51.100.53
+
+swap:
+  size: 1G
+
+system_packages:
+  baseline:
+    - audit
+    - bash-completion
+    - chrony
+    - curl
+    - epel-release
+    - fail2ban
+    - firewalld
+    - git
+    - httpd-tools
+    - NetworkManager
+    - openssh-server
+    - podman
+    - python3
+    - python3-firewall
+    - python3-libselinux
+    - python3-pip
+    - restic
+    - rsync
+    - yum-utils
+  admin:
+    - bind-utils
+    - setroubleshoot-server
+    - tmux
+    - vim
+  web:
+    - certbot
+    - nginx
+    - python3-certbot-dns-digitalocean
+    - python3-certbot-nginx
+  uninstall:
+    - avahi
+    - bluez
+    - cups
+    - nfs-utils
+    - rpcbind
+    - samba
+
+system_services:
+  disabled:
+    - avahi-daemon
+    - bluetooth
+    - cups
+    - nfs-server
+    - rpcbind
+    - smb
+```
+
+Supported keys:
+
+- `timezone`: IANA timezone used by managed servers and their notifications.
+- `network.vpc_cidr`: environment VPC CIDR, used by OpenTofu and Ansible.
+- `network.dns_resolvers`: list of DNS resolver addresses.
+- `swap.size`: managed swapfile size.
+- `system_packages.baseline`: packages installed on every managed server and
+  used for bastion bootstrap.
+- `system_packages.admin`: common administration packages.
+- `system_packages.web`: web-hosting packages.
+- `system_packages.uninstall`: packages to remove from managed servers.
+- `system_services.disabled`: services to stop and disable.
+
+Each setting has one source. Server environment is derived from infrastructure.
+Installation paths, application service accounts, service/container names,
+the swapfile path, and the standard NTP pool are fixed in the config repository.
+
+[Back to top](#file-schema)
+
+## `ansible.yml`
+
+Plaintext schedules, resource policy, and notification settings for Ansible.
+
+```yaml
+---
+ansible:
+  runner:
+    schedule: "*-*-* 01:30:00"
+    cpu_quota_percent: 40
+  poller:
+    schedule: "*-*-* *:0/10:00"
+  notifications:
+    environment: staging
+    colors:
+      info: 5811424
+      success: 4175499
+      warning: 13211450
+      error: 14042437
+```
+
+Supported keys:
+
+- `ansible.runner.schedule`: convergence timer schedule in systemd calendar syntax.
+- `ansible.runner.cpu_quota_percent`: convergence runner CPU quota.
+- `ansible.poller.schedule`: repository polling schedule in systemd calendar syntax.
+- `ansible.notifications.environment`: `production` or `staging`; selects the
+  matching `discord_webhooks` entry in `vault/bastion.yml`.
+- `ansible.notifications.colors`: Discord embed colors for `info`, `success`,
+  `warning`, and `error`.
+
+Notification timestamps use the server timezone. The server environment
+determines the environment label in notification messages.
+
+[Back to top](#file-schema)
+
+## `policy/infrastructure.yml`
+
+Plaintext OpenTofu configuration. Do not store secrets in this file.
+
+- `identity.client_name`: resource-name and tag prefix.
+- `identity.client_domain`: host DNS suffix and infrastructure DNS zone.
+- `identity.organization`: VPC descriptions and certificate organization.
+- `project.name`: DigitalOcean project name.
+- `project.description`, `project.purpose`, `project.environment`, and
+  `project.is_default`: shared project properties.
+- `defaults.region`: DigitalOcean region.
+- `defaults.os_image`: default droplet image slug.
+- `defaults.droplet_size`: default droplet size slug.
+- `baseline.vpc_cidr`: shared baseline VPC CIDR.
+- `repositories.config`: HTTPS configuration-repository URL used by bootstrap.
+- `repositories.vault`: SSH vault-repository URL used by bootstrap.
+
+```yaml
+---
+identity:
+  client_name: example
+  client_domain: example.com
+  organization: Example Company
+
+project:
+  name: example
+  description: Example infrastructure project
+  purpose: Web Application
+  environment: Production
+  is_default: true
+
+defaults:
+  region: nyc1
+  os_image: almalinux-10-x64
+  droplet_size: s-1vcpu-2gb
+
+baseline:
+  vpc_cidr: 172.20.0.0/16
+
+repositories:
+  config: https://github.com/example-org/configuration.git
+  vault: git@github.com:example-org/private-vault.git
+```
+
+[Back to top](#file-schema)
+
+## `policy/compute.yml`
+
+Plaintext environment compute policy.
+
+- `bootstrap.control_public_key`: current Ansible control public key. Keep it
+  equal to `ansible_control.public_key` in `vault/bastion.yml` so new hosts
+  trust the control node before their first convergence.
+
+- `bastions.control_node`: key of the active control bastion.
+- `bastions.instances`: map of bastion instances; at least one is required.
+- `web.instances`: map of web instances; an empty map omits web hosts.
+- `web.tls_mode`: `auto` or `load_balancer`; defaults to `auto`.
+- `mcp.instances`: optional map containing at most one MCP host.
+- Each instance requires `index`; optional `size` and `image` override the
+  defaults in `policy/infrastructure.yml`.
+
+With `auto`, one web host uses host TLS and multiple web hosts use a load
+balancer. MCP hosts use host TLS and require a firewall policy that permits
+HTTPS and restricts SSH to bastions.
+
+```yaml
+---
+bootstrap:
+  control_public_key: "ssh-ed25519 AAAAexample operator@example.com"
+
+bastions:
+  control_node: bastion-02
+  instances:
+    bastion-02:
+      index: 2
+    bastion-05:
+      index: 5
+
+web:
+  tls_mode: auto
+  instances:
+    web-03:
+      index: 3
+
+mcp:
+  instances: {}
+```
+
+[Back to top](#file-schema)
+
+## `policy/firewall.yml`
+
+`policy/firewall.yml` is plaintext and is read by OpenTofu and Ansible.
 
 ```yaml
 ---
@@ -387,119 +593,7 @@ allow SSH from bastions to managed hosts.
 
 [Back to top](#file-schema)
 
-## `infrastructure.yml`
-
-Plaintext OpenTofu configuration. Do not store secrets in this file.
-
-- `identity.client_name`: resource-name and tag prefix.
-- `identity.client_domain`: host DNS suffix and infrastructure DNS zone.
-- `identity.organization`: VPC descriptions and certificate organization.
-- `project.name`: DigitalOcean project name.
-- `project.description`, `project.purpose`, `project.environment`, and
-  `project.is_default`: shared project properties.
-- `defaults.region`: DigitalOcean region.
-- `defaults.os_image`: default droplet image slug.
-- `defaults.droplet_size`: default droplet size slug.
-- `baseline.vpc_cidr`: shared baseline VPC CIDR.
-- `repositories.config`: HTTPS configuration-repository URL used by bootstrap.
-- `repositories.vault`: SSH vault-repository URL used by bootstrap.
-
-```yaml
----
-identity:
-  client_name: example
-  client_domain: example.com
-  organization: Example Company
-
-project:
-  name: example
-  description: Example infrastructure project
-  purpose: Web Application
-  environment: Production
-  is_default: true
-
-defaults:
-  region: nyc1
-  os_image: almalinux-10-x64
-  droplet_size: s-1vcpu-2gb
-
-baseline:
-  vpc_cidr: 172.20.0.0/16
-
-repositories:
-  config: https://github.com/example-org/configuration.git
-  vault: git@github.com:example-org/private-vault.git
-```
-
-[Back to top](#file-schema)
-
-## `compute.yml`
-
-Plaintext environment compute policy.
-
-- `bootstrap.control_public_key`: current Ansible control public key. Keep it
-  equal to `ansible_control_public_key` in `vault/bastion.yml` so new hosts
-  trust the control node before their first convergence.
-
-- `bastions.control_node`: key of the active control bastion.
-- `bastions.instances`: map of bastion instances; at least one is required.
-- `web.instances`: map of web instances; an empty map omits web hosts.
-- `web.tls_mode`: `auto` or `load_balancer`; defaults to `auto`.
-- `mcp.instances`: optional map containing at most one MCP host.
-- Each instance requires `index`; optional `size` and `image` override the
-  defaults in `infrastructure.yml`.
-
-With `auto`, one web host uses host TLS and multiple web hosts use a load
-balancer. MCP hosts use host TLS and require a firewall policy that permits
-HTTPS and restricts SSH to bastions.
-
-```yaml
----
-bootstrap:
-  control_public_key: "ssh-ed25519 AAAAexample operator@example.com"
-
-bastions:
-  control_node: bastion-02
-  instances:
-    bastion-02:
-      index: 2
-    bastion-05:
-      index: 5
-
-web:
-  tls_mode: auto
-  instances:
-    web-03:
-      index: 3
-
-mcp:
-  instances: {}
-```
-
-[Back to top](#file-schema)
-
-## `operations.yml`
-
-Plaintext runtime settings shared by OpenTofu bootstrap and Ansible.
-Keys use the role variable names consumed by `grayhaven-config-ansible`.
-The file supplies package lists, resolver and time settings, service schedules,
-resource limits, application paths, source repositories, and monitoring choices.
-`config.yml` supplies environment selectors and can override matching settings.
-Secrets remain in `vault/*.yml`.
-
-The complete example file provides the supported settings. For example:
-
-```yaml
----
-baseline_validation_timezone: UTC
-automation_runner_schedule: "*-*-* 01:30:00"
-automation_poller_schedule: "*-*-* *:0/10:00"
-automation_runner_cpu_quota_percent: 40
-```
-
-[Back to top](#file-schema)
-
-## `dns.yml`
+## `policy/dns.yml`
 
 Plaintext environment DNS policy. `ttl` sets the default record TTL. `domains`
 maps stable domain keys to entries with `name`, optional `environment`,
@@ -536,9 +630,9 @@ domains:
 
 [Back to top](#file-schema)
 
-## `baseline/dns.yml`
+## `policy/baseline/dns.yml`
 
-Plaintext shared DNS zones and records. Use the `dns.yml` record structure.
+Plaintext shared DNS zones and records. Use the `policy/dns.yml` record structure.
 Baseline `protected_records` additionally support MX records with `priority`
 and CAA records with `flags` and `tag`. Mail records belong in this file.
 The baseline workspace reads this file from `main`.
@@ -579,7 +673,7 @@ domains:
 
 [Back to top](#file-schema)
 
-## `baseline/ssh-keys.yml`
+## `policy/baseline/ssh-keys.yml`
 
 Plaintext `admin_ssh_keys` list of first-boot admin public keys. Baseline owns
 the DigitalOcean key resources; environment workspaces resolve those keys by
@@ -596,16 +690,36 @@ admin_ssh_keys:
 
 [Back to top](#file-schema)
 
+## `grafana/observability.yml`
+
+Plaintext monitoring configuration. Grafana Cloud is supported in production.
+
+```yaml
+---
+observability:
+  grafana_cloud:
+    enabled: false
+    logs_enabled: false
+```
+
+- `grafana_cloud.enabled`: enables Grafana Cloud metrics and managed alert rules.
+- `grafana_cloud.logs_enabled`: enables log shipping when Grafana Cloud is enabled.
+
+Both Grafana Cloud flags remain false in staging.
+
+[Back to top](#file-schema)
+
 ## `vault/common.yml`
 
 `vault/common.yml` stores secrets and private values shared across managed
 hosts.
 
 ```yaml
+---
 root_password_hash: "$6$example-root-password-hash"
 
 restic:
-  encryption_password: "example-restic-password"
+  passphrase: "example-restic-password"
   remotes:
     gcs:
       credentials_json: |
@@ -626,12 +740,20 @@ users:
     tmux_auto_attach: true
     tmux_workspace: jdoe.tmux
     state: present
+  - username: oldadmin
+    full_name: Old Admin
+    password_hash: "$6$example-old-admin-password-hash"
+    ssh_keys:
+      - "ssh-ed25519 AAAAexample-old oldadmin@example"
+    sudo: true
+    state: absent
+    home_mode: archive
 ```
 
 Supported keys:
 
 - `root_password_hash`: Linux password hash for the root account.
-- `restic.encryption_password`: password used by restic to encrypt backups.
+- `restic.passphrase`: password used by restic to encrypt backups.
 - `restic.remotes.gcs.credentials_json`: optional Google Cloud service account
   JSON used to create Google Cloud Storage buckets and access remote restic
   repositories. Required when `backup.repositories.remote.provider` is `gcs`.
@@ -641,9 +763,6 @@ Supported keys:
   Required when `observability.grafana_cloud.enabled` is true.
 - `users`: list of managed users. User operations are documented in
   [Managing Users](operations.md#managing-users).
-
-Older vault data may still define the flat `restic_password` key, but new vault
-data should use `restic.encryption_password`.
 
 Supported `grafana_cloud` keys:
 
@@ -696,29 +815,31 @@ admin access on bastions.
 `vault/bastion.yml` stores secrets used by bastion/control-node automation.
 
 ```yaml
-ansible_control_private_key: |
-  -----BEGIN OPENSSH PRIVATE KEY-----
-  example
-  -----END OPENSSH PRIVATE KEY-----
-ansible_control_public_key: "ssh-ed25519 AAAAexample ansible@example"
+---
+ansible_control:
+  private_key: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    example
+    -----END OPENSSH PRIVATE KEY-----
+  public_key: "ssh-ed25519 AAAAexample ansible@example"
 
 digitalocean_inventory_api_token: "dop_v1_example_inventory_token"
 
 discord_webhooks:
   production: "https://discord.com/api/webhooks/example/production"
-  testing: "https://discord.com/api/webhooks/example/testing"
+  staging: https://discord.com/api/webhooks/example/staging
 ```
 
 Supported keys:
 
-- `ansible_control_private_key`: private key used by the active Ansible control
+- `ansible_control.private_key`: private key used by the active Ansible control
   node to reach managed hosts.
-- `ansible_control_public_key`: public key installed for the `ansible`
+- `ansible_control.public_key`: public key installed for the `ansible`
   automation user on managed hosts.
 - `digitalocean_inventory_api_token`: DigitalOcean API token used for dynamic
   inventory discovery.
 - `discord_webhooks.production`: production Discord notification webhook URL.
-- `discord_webhooks.testing`: testing Discord notification webhook URL.
+- `discord_webhooks.staging`: staging Discord notification webhook URL.
 
 [Back to top](#file-schema)
 
@@ -727,6 +848,7 @@ Supported keys:
 `vault/web.yml` stores web-hosting secrets.
 
 ```yaml
+---
 digitalocean_dns_api_token: "dop_v1_example_dns_token"
 web_deploy_fanout_secret: "example_private_web_deploy_fanout_secret"
 
@@ -843,20 +965,20 @@ GitHub credentials.
 
 ```yaml
 ---
-# Example plaintext only. Encrypt this file in the private vault repository.
 mcp_secrets:
-  config_passphrase: "example_encrypted_config_password_replace_before_deployment"
-  github_username: "username"
-  github_pat: "example_read_packages_token_replace_before_deployment"
+  passphrase: "example_encrypted_config_password_replace_before_deployment"
+  github:
+    username: "username"
+    pat: "example_read_packages_token_replace_before_deployment"
 ```
 
 Supported keys:
 
-- `mcp_secrets.config_passphrase`: password used to decrypt
+- `mcp_secrets.passphrase`: password used to decrypt
   `config.secrets.enc`.
-- `mcp_secrets.github_username`: GitHub username that owns the personal access token.
+- `mcp_secrets.github.username`: GitHub username that owns the personal access token.
   Write the username as a quoted string, for example `"username"`.
-- `mcp_secrets.github_pat`: GitHub personal access token used for private
+- `mcp_secrets.github.pat`: GitHub personal access token used for private
   GHCR pulls and read-only configuration downloads from the private repository.
   The token requires `read:packages` and repository contents read access.
 
