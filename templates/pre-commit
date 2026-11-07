@@ -15,6 +15,7 @@ lint_files=(
   "firewall.yml"
   "infrastructure.yml"
   "compute.yml"
+  "operations.yml"
   "dns.yml"
   "baseline/dns.yml"
   "baseline/ssh-keys.yml"
@@ -49,6 +50,10 @@ for vault_file in "${required_vault_files[@]}"; do
       failures+=("$vault_file is not encrypted in the staged commit")
     fi
   fi
+done
+
+for optional_file in grafana-alert-rule-uids.yml grafana-alert-rules.yml; do
+  [[ ! -f "$optional_file" ]] || lint_files+=("$optional_file")
 done
 
 if ! yamllint "${lint_files[@]}"; then
