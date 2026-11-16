@@ -230,12 +230,14 @@ grayhaven_backupctl:
 
 Plaintext server settings shared by infrastructure bootstrap and Ansible.
 
+Do not change `os_release` to an earlier release.
+
 ```yaml
 ---
+os_release: "10.3"
 timezone: UTC
 
 network:
-  vpc_cidr: 172.21.0.0/16
   dns_resolvers:
     - 192.0.2.53
     - 198.51.100.53
@@ -294,8 +296,8 @@ system_services:
 
 Supported keys:
 
+- `os_release`: approved operating system major and minor release.
 - `timezone`: IANA timezone used by managed servers and their notifications.
-- `network.vpc_cidr`: environment VPC CIDR, used by OpenTofu and Ansible.
 - `network.dns_resolvers`: list of DNS resolver addresses.
 - `swap.size`: managed swapfile size.
 - `system_packages.baseline`: packages installed on every managed server and
@@ -360,7 +362,9 @@ Plaintext OpenTofu configuration. Do not store secrets in this file.
 - `defaults.region`: DigitalOcean region.
 - `defaults.os_image`: default droplet image slug.
 - `defaults.droplet_size`: default droplet size slug.
-- `baseline.vpc_cidr`: shared baseline VPC CIDR.
+- `network.vpcs`: permanent VPCs keyed by policy identifier; each entry has
+  `environment`, `region`, and `cidr`.
+- `network.peerings`: pairs of VPC policy identifiers owned by baseline.
 - `repositories.config`: HTTPS configuration-repository URL used by bootstrap.
 - `repositories.vault`: SSH vault-repository URL used by bootstrap.
 
@@ -383,8 +387,21 @@ defaults:
   os_image: almalinux-10-x64
   droplet_size: s-1vcpu-2gb
 
-baseline:
-  vpc_cidr: 172.20.0.0/16
+network:
+  vpcs:
+    baseline:
+      environment: baseline
+      region: nyc1
+      cidr: 172.20.0.0/16
+    staging:
+      environment: staging
+      region: nyc1
+      cidr: 172.21.0.0/16
+    prod:
+      environment: prod
+      region: nyc1
+      cidr: 172.22.0.0/16
+  peerings: {}
 
 repositories:
   config: https://github.com/example-org/configuration.git
