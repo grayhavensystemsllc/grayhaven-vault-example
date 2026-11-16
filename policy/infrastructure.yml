@@ -16,8 +16,21 @@ defaults:
   os_image: almalinux-10-x64
   droplet_size: s-1vcpu-2gb
 
-baseline:
-  vpc_cidr: 172.20.0.0/16
+network:
+  vpcs:
+    baseline:
+      environment: baseline
+      region: nyc1
+      cidr: 172.20.0.0/16
+    staging:
+      environment: staging
+      region: nyc1
+      cidr: 172.21.0.0/16
+    prod:
+      environment: prod
+      region: nyc1
+      cidr: 172.22.0.0/16
+  peerings: {}
 
 repositories:
   config: https://github.com/example-org/configuration.git
