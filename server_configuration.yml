@@ -1,8 +1,9 @@
 ---
+os_release: "10.3"
+
 timezone: UTC
 
 network:
-  vpc_cidr: 172.22.0.0/16
   dns_resolvers:
     - 192.0.2.53
     - 198.51.100.53
