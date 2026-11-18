@@ -359,6 +359,10 @@ determines the environment label in notification messages.
 
 Plaintext OpenTofu configuration. Do not store secrets in this file.
 
+See the
+[staging policy example](https://github.com/grayhavensystemsllc/grayhaven-vault-example/blob/staging/policy/infrastructure.yml)
+for a configured peering.
+
 - `identity.client_name`: resource-name and tag prefix.
 - `identity.client_domain`: host DNS suffix and infrastructure DNS zone.
 - `identity.organization`: VPC descriptions and certificate organization.
@@ -370,7 +374,10 @@ Plaintext OpenTofu configuration. Do not store secrets in this file.
 - `defaults.droplet_size`: default droplet size slug.
 - `network.vpcs`: permanent VPCs keyed by policy identifier; each entry has
   `environment`, `region`, and `cidr`.
-- `network.peerings`: pairs of VPC policy identifiers owned by baseline.
+- `network.peerings`: map of peering names to pairs of VPC policy identifiers.
+  Define staging peers in `staging` and production peers in `main`. Each pair
+  connects two regions in its own environment. Baseline manages both branches'
+  peerings and owns the VPCs.
 - `repositories.config`: HTTPS configuration-repository URL used by bootstrap.
 - `repositories.vault`: SSH vault-repository URL used by bootstrap.
 
@@ -389,24 +396,36 @@ project:
   is_default: true
 
 defaults:
-  region: nyc1
+  region: ams3
   os_image: almalinux-10-x64
   droplet_size: s-1vcpu-2gb
 
 network:
   vpcs:
-    baseline:
+    baseline_ams3:
       environment: baseline
-      region: nyc1
+      region: ams3
       cidr: 172.20.0.0/16
-    staging:
+    staging_ams3:
       environment: staging
-      region: nyc1
+      region: ams3
       cidr: 172.21.0.0/16
-    prod:
+    prod_ams3:
       environment: prod
-      region: nyc1
+      region: ams3
       cidr: 172.22.0.0/16
+    baseline_fra1:
+      environment: baseline
+      region: fra1
+      cidr: 172.23.0.0/16
+    staging_fra1:
+      environment: staging
+      region: fra1
+      cidr: 172.24.0.0/16
+    prod_fra1:
+      environment: prod
+      region: fra1
+      cidr: 172.25.0.0/16
   peerings: {}
 
 repositories:
